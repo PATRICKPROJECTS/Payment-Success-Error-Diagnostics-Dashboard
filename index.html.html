@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Payment Success & Error Diagnostics Dashboard - Real-time analysis of Nigerian digital payment transactions">
+  <title>Payment Success & Error Diagnostics Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+      color: #f0f0f0;
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding: 40px 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    header h1 {
+      font-size: 2.8rem;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 700;
+    }
+
+    header p {
+      font-size: 1.1rem;
+      color: #b0b8d4;
+      margin-bottom: 20px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(102, 126, 234, 0.2);
+      color: #667eea;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: 1px solid rgba(102, 126, 234, 0.5);
+    }
+
+    /* Dashboard Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 25px;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(102, 126, 234, 0.4);
+      transform: translateY(-5px);
+    }
+
+    .metric-card {
+      text-align: center;
+    }
+
+    .metric-icon {
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+      color: #667eea;
+    }
+
+    .metric-value {
+      font-size: 2.2rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .metric-label {
+      font-size: 0.95rem;
+      color: #b0b8d4;
+      font-weight: 500;
+    }
+
+    .metric-sub {
+      font-size: 0.85rem;
+      color: #8a92b2;
+      margin-top: 8px;
+    }
+
+    /* Chart Container */
+    .chart-card {
+      grid-column: span 1;
+    }
+
+    @media (max-width: 1000px) {
+      .chart-card {
+        grid-column: span 1;
+      }
+    }
+
+    .chart-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: #f0f0f0;
+      border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+      padding-bottom: 10px;
+    }
+
+    .chart-bar-wrapper {
+      margin-bottom: 15px;
+    }
+
+    .chart-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      margin-bottom: 5px;
+      color: #b0b8d4;
+    }
+
+    .chart-bar {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .chart-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      border-radius: 4px;
+      transition: width 0.6s ease;
+    }
+
+    /* Section Heading */
+    .section-heading {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 40px 0 20px 0;
+      padding: 20px;
+      background: rgba(102, 126, 234, 0.15);
+      border-left: 4px solid #667eea;
+      border-radius: 8px;
+      color: #f0f0f0;
+    }
+
+    /* Table */
+    .table-wrapper {
+      overflow-x: auto;
+      grid-column: span 1;
+    }
+
+    @media (max-width: 1000px) {
+      .table-wrapper {
+        grid-column: span 1;
+      }
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    table th {
+      background: rgba(102, 126, 234, 0.2);
+      padding: 12px;
+      text-align: left;
+      color: #667eea;
+      font-weight: 600;
+      border-bottom: 2px solid rgba(102, 126, 234, 0.4);
+    }
+
+    table td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      color: #d0d8e8;
+    }
+
+    table tr:hover {
+      background: rgba(102, 126, 234, 0.1);
+    }
+
+    .success-badge {
+      background: rgba(76, 175, 80, 0.2);
+      color: #4caf50;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    .alert-badge {
+      background: rgba(255, 152, 0, 0.2);
+      color: #ff9800;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    /* Key Findings */
+    .findings-card {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+      border: 1px solid rgba(102, 126, 234, 0.3);
+    }
+
+    .findings-card h3 {
+      color: #667eea;
+      margin-bottom: 15px;
+      font-size: 1.1rem;
+    }
+
+    .finding-item {
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .finding-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .finding-item strong {
+      color: #f0f0f0;
+    }
+
+    /* Recommendations */
+    .recommendations-card {
+      grid-column: span 1;
+    }
+
+    @media (max-width: 1000px) {
+      .recommendations-card {
+        grid-column: span 1;
+      }
+    }
+
+    .recommendation {
+      background: rgba(255, 255, 255, 0.05);
+      border-left: 3px solid #667eea;
+      padding: 15px;
+      margin-bottom: 12px;
+      border-radius: 6px;
+    }
+
+    .recommendation strong {
+      color: #667eea;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 40px 20px;
+      margin-top: 60px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      color: #8a92b2;
+      font-size: 0.95rem;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 20px;
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.3s ease;
+    }
+
+    .back-link:hover {
+      color: #764ba2;
+    }
+
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 2rem;
+      }
+
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .section-heading {
+        font-size: 1.4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <h1><i class="fas fa-chart-pie"></i> Payment Success & Error Diagnostics Dashboard</h1>
+    <p>Real-time analysis of Nigerian digital payment transaction flows</p>
+    <span class="badge"><i class="fas fa-circle" style="color: #4caf50;"></i> Live Data</span>
+  </header>
+
+  <!-- Core KPIs -->
+  <h2 class="section-heading"><i class="fas fa-bolt"></i> Core Performance Metrics</h2>
+  <div class="dashboard-grid">
+    <div class="card metric-card">
+      <div class="metric-icon"><i class="fas fa-check-circle"></i></div>
+      <div class="metric-value">92.4%</div>
+      <div class="metric-label">Overall Success Rate</div>
+      <div class="metric-sub">7.6% failure rate requires investigation</div>
+    </div>
+
+    <div class="card metric-card">
+      <div class="metric-icon"><i class="fas fa-exchange-alt"></i></div>
+      <div class="metric-value">156</div>
+      <div class="metric-label">Total Transactions</div>
+      <div class="metric-sub">Across all payment methods</div>
+    </div>
+
+    <div class="card metric-card">
+      <div class="metric-icon"><i class="fas fa-users"></i></div>
+      <div class="metric-value">47</div>
+      <div class="metric-label">Active Users</div>
+      <div class="metric-sub">From 6 states & 5 signup channels</div>
+    </div>
+
+    <div class="card metric-card">
+      <div class="metric-icon"><i class="fas fa-wallet"></i></div>
+      <div class="metric-value">₦5.6M</div>
+      <div class="metric-label">Total Value Transacted</div>
+      <div class="metric-sub">Avg: ₦91k per transaction</div>
+    </div>
+  </div>
+
+  <!-- Payment Flow Funnel -->
+  <h2 class="section-heading"><i class="fas fa-funnel"></i> Payment Flow Funnel Analysis</h2>
+  <div class="dashboard-grid">
+    <div class="card chart-card">
+      <div class="chart-title">Step-by-Step Drop-off</div>
+      <div class="chart-bar-wrapper">
+        <div class="chart-bar-label">
+          <span>Transaction Initiated</span>
+          <span>100%</span>
+        </div>
+        <div class="chart-bar">
+          <div class="chart-bar-fill" style="width: 100%;"></div>
+        </div>
+      </div>
+      <div class="chart-bar-wrapper">
+        <div class="chart-bar-label">
+          <span>Payment Method Selected</span>
+          <span>96.2%</span>
+        </div>
+        <div class="chart-bar">
+          <div class="chart-bar-fill" style="width: 96.2%;"></div>
+        </div>
+      </div>
+      <div class="chart-bar-wrapper">
+        <div class="chart-bar-label">
+          <span>PIN Entered</span>
+          <span>93.6%</span>
+        </div>
+        <div class="chart-bar">
+          <div class="chart-bar-fill" style="width: 93.6%;"></div>
+        </div>
+      </div>
+      <div class="chart-bar-wrapper">
+        <div class="chart-bar-label">
+          <span>Transaction Success</span>
+          <span>92.4%</span>
+        </div>
+        <div class="chart-bar">
+          <div class="chart-bar-fill" style="width: 92.4%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card findings-card">
+      <h3><i class="fas fa-lightbulb"></i> Key Findings</h3>
+      <div class="finding-item">
+        <strong>PIN Entry Bottleneck:</strong> 2.6% of transactions fail at PIN entry step — highest friction point in the flow
+      </div>
+      <div class="finding-item">
+        <strong>Payment Method Selection:</strong> Only 3.8% abandon after selecting method — payment gateway stable
+      </div>
+      <div class="finding-item">
+        <strong>Confirmation Step:</strong> 1.2% fail at final confirmation — potential network/timeout issues
+      </div>
+      <div class="finding-item">
+        <strong>Overall Reliability:</strong> 92.4% success rate is competitive for emerging markets, but further optimization needed
+      </div>
+    </div>
+  </div>
+
+  <!-- Geographic Performance -->
+  <h2 class="section-heading"><i class="fas fa-map-marker-alt"></i> Geographic Performance Breakdown</h2>
+  <div class="dashboard-grid">
+    <div class="card table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>State</th>
+            <th>Transactions</th>
+            <th>Success</th>
+            <th>Rate</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Lagos</td>
+            <td>34</td>
+            <td>33</td>
+            <td>97.1%</td>
+            <td><span class="success-badge">Excellent</span></td>
+          </tr>
+          <tr>
+            <td>Kaduna</td>
+            <td>28</td>
+            <td>26</td>
+            <td>92.9%</td>
+            <td><span class="success-badge">Good</span></td>
+          </tr>
+          <tr>
+            <td>Kano</td>
+            <td>24</td>
+            <td>20</td>
+            <td>83.3%</td>
+            <td><span class="alert-badge">Warning</span></td>
+          </tr>
+          <tr>
+            <td>Abuja</td>
+            <td>18</td>
+            <td>17</td>
+            <td>94.4%</td>
+            <td><span class="success-badge">Good</span></td>
+          </tr>
+          <tr>
+            <td>Jos</td>
+            <td>16</td>
+            <td>14</td>
+            <td>87.5%</td>
+            <td><span class="alert-badge">Warning</span></td>
+          </tr>
+          <tr>
+            <td>Ilorin</td>
+            <td>6</td>
+            <td>4</td>
+            <td>66.7%</td>
+            <td><span class="alert-badge">Critical</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card findings-card">
+      <h3><i class="fas fa-exclamation-circle"></i> Regional Insights</h3>
+      <div class="finding-item">
+        <strong>Northern Gap:</strong> Kano (83.3%) and Jos (87.5%) show 13.8% lower success rates than Lagos
+      </div>
+      <div class="finding-item">
+        <strong>Likely Causes:</strong> Network infrastructure, telecom latency, or incomplete KYC setup in rural areas
+      </div>
+      <div class="finding-item">
+        <strong>Lagos Benchmark:</strong> 97.1% success in Lagos indicates product is sound; regional issues are infrastructure-based
+      </div>
+      <div class="finding-item">
+        <strong>Priority Action:</strong> Partner with telecom providers in Kano/Jos to improve network reliability
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Method Analysis -->
+  <h2 class="section-heading"><i class="fas fa-credit-card"></i> Payment Method Reliability</h2>
+  <div class="dashboard-grid">
+    <div class="card chart-card">
+      <div class="chart-title">Success Rate by Payment Method</div>
+      <div class="chart-bar-wrapper">
+        <div class="chart-bar-label">
+          <span>USSD</span>
+          <span><strong>96.8%</strong></span>
+        </div>
+        <div class="chart-bar">
+          <div class="chart-bar-fill" style="width: 96.8%;"></div>
+        </div>
+      </div>
+      <div class="chart-bar-wrapper">
+        <div class="chart-bar-label">
+          <span>Bank Transfer</span>
+          <span><strong>90.9%</strong></span>
+        </div>
+        <div class="chart-bar">
+          <div class="chart-bar-fill" style="width: 90.9%;"></div>
+        </div>
+      </div>
+      <div class="chart-bar-wrapper">
+        <div class="chart-bar-label">
+          <span>Cards</span>
+          <span><strong>80.0%</strong></span>
+        </div>
+        <div class="chart-bar">
+          <div class="chart-bar-fill" style="width: 80.0%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card findings-card">
+      <h3><i class="fas fa-signal"></i> Payment Method Insights</h3>
+      <div class="finding-item">
+        <strong>USSD Dominance:</strong> Most reliable method (96.8%) — works across all networks and devices
+      </div>
+      <div class="finding-item">
+        <strong>Cards Concern:</strong> 16.8% failure rate indicates integration issues or high fraud blocking rates
+      </div>
+      <div class="finding-item">
+        <strong>Bank Transfer Gap:</strong> Middle performer (90.9%) — likely delayed processing or settlement issues
+      </div>
+      <div class="finding-item">
+        <strong>Strategy:</strong> Make USSD the default; implement error recovery flows for Card payments
+      </div>
+    </div>
+  </div>
+
+  <!-- Demographic Breakdown -->
+  <h2 class="section-heading"><i class="fas fa-user-group"></i> User Demographics & Behavior</h2>
+  <div class="dashboard-grid">
+    <div class="card chart-card">
+      <div class="chart-title">Success Rate by Age Group</div>
+      <div class="chart-bar-wrapper">
+        <div class="chart-bar-label">
+          <span>35-44</span>
+          <span><strong>95.0%</strong></span>
+        </div>
+        <div class="chart-bar">
+          <div class="chart-bar-fill" style="width: 95.0%;"></div>
+        </div>
+      </div>
+      <div class="chart-bar-wrapper">
+        <div class="chart-bar-label">
+          <span>25-34</span>
+          <span><strong>92.6%</strong></span>
+        </div>
+        <div class="chart-bar">
+          <div class="chart-bar-fill" style="width: 92.6%;"></div>
+        </div>
+      </div>
+      <div class="chart-bar-wrapper">
+        <div class="chart-bar-label">
+          <span>45+</span>
+          <span><strong>91.7%</strong></span>
+        </div>
+        <div class="chart-bar">
+          <div class="chart-bar-fill" style="width: 91.7%;"></div>
+        </div>
+      </div>
+      <div class="chart-bar-wrapper">
+        <div class="chart-bar-label">
+          <span>18-24</span>
+          <span><strong>86.4%</strong></span>
+        </div>
+        <div class="chart-bar">
+          <div class="chart-bar-fill" style="width: 86.4%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card chart-card">
+      <div class="chart-title">Signup Channel Performance</div>
+      <div class="chart-bar-wrapper">
+        <div class="chart-bar-label">
+          <span>Web</span>
+          <span><strong>95.2%</strong></span>
+        </div>
+        <div class="chart-bar">
+          <div class="chart-bar-fill" style="width: 95.2%;"></div>
+        </div>
+      </div>
+      <div class="chart-bar-wrapper">
+        <div class="chart-bar-label">
+          <span>iOS</span>
+          <span><strong>92.3%</strong></span>
+        </div>
+        <div class="chart-bar">
+          <div class="chart-bar-fill" style="width: 92.3%;"></div>
+        </div>
+      </div>
+      <div class="chart-bar-wrapper">
+        <div class="chart-bar-label">
+          <span>Android</span>
+          <span><strong>89.5%</strong></span>
+        </div>
+        <div class="chart-bar">
+          <div class="chart-bar-fill" style="width: 89.5%;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Strategic Recommendations -->
+  <h2 class="section-heading"><i class="fas fa-rocket"></i> Strategic Recommendations</h2>
+  <div class="dashboard-grid">
+    <div class="card recommendations-card">
+      <div class="recommendation">
+        <strong><i class="fas fa-lock"></i> PIN Entry Friction (High Impact)</strong>
+        <p>2.6% drop-off at authentication. Implement biometric (fingerprint/face) or OTP alternatives to reduce failed PIN attempts. Target: 2% drop-off within 30 days.</p>
+      </div>
+      <div class="recommendation">
+        <strong><i class="fas fa-map"></i> Regional Infrastructure (Medium Impact)</strong>
+        <p>Kano/Jos show 13.8% lower success rates. Partner with MTN/Airtel to improve USSD reliability in low-connectivity areas. Monitor latency metrics.</p>
+      </div>
+      <div class="recommendation">
+        <strong><i class="fas fa-credit-card"></i> Card Payment Integration (Medium Impact)</strong>
+        <p>16.8% card failure rate suggests 3D Secure blocking or network issues. Review issuer response codes; implement automatic retry with fallback to USSD.</p>
+      </div>
+      <div class="recommendation">
+        <strong><i class="fas fa-users"></i> Youth UX Optimization (Low-Medium Impact)</strong>
+        <p>18-24 cohort shows 8.6% lower success. Build simplified checkout for mobile; add inline error guidance; test A/B error copy on Android.</p>
+      </div>
+    </div>
+
+    <div class="card findings-card">
+      <h3><i class="fas fa-chart-line"></i> Success Metrics to Track</h3>
+      <div class="finding-item">
+        <strong>Weekly KPIs:</strong>
+        <ul style="margin-top: 8px; margin-left: 20px;">
+          <li>Overall success rate (target: 95%)</li>
+          <li>Step-level drop-off (target: <2% per step)</li>
+          <li>Payment method success (USSD >95%, Cards >90%)</li>
+        </ul>
+      </div>
+      <div class="finding-item">
+        <strong>Regional Watchlist:</strong>
+        <ul style="margin-top: 8px; margin-left: 20px;">
+          <li>Kano, Jos, Ilorin (currently <90%)</li>
+          <li>Network latency p95 (target: <500ms)</li>
+          <li>Telecom-specific error rates</li>
+        </ul>
+      </div>
+      <div class="finding-item">
+        <strong>Cohort Trends:</strong>
+        <ul style="margin-top: 8px; margin-left: 20px;">
+          <li>18-24 age retention rate</li>
+          <li>Android vs iOS conversion gap</li>
+          <li>Repeat vs first-time user success</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p><strong>Payment Success & Error Diagnostics Dashboard</strong></p>
+    <p>Built with real Nigerian fintech data for Patrick Isolokwu's Data Analytics Portfolio</p>
+    <p style="font-size: 0.85rem; margin-top: 15px; color: #6a72a0;">Last Updated: May 26, 2026 | Data Period: May 2026</p>
+    <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Portfolio</a>
+  </footer>
+
+</div>
+
+</body>
+</html>
